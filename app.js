@@ -143,22 +143,27 @@ function names(cands, list) {
   return list.map(c => esc(cands[c])).join(', ');
 }
 
-function describeRound(cands, r) {
-  const out = [`<p>Remaining: ${names(cands, r.alive)}.`];
-  const dropped = r.alive.filter(c => !r.smith.includes(c));
-  if (r.winner !== undefined) {
-    out.push(dropped.length
-      ? ` ${esc(cands[r.winner])} beats every other remaining candidate head-to-head, so wins.</p>`
-      : ` Only one candidate remains: ${esc(cands[r.winner])}.</p>`);
-    return out.join('');
-  }
-  out.push(dropped.length
-    ? ` Smith set: ${names(cands, r.smith)}. Eliminated for losing head-to-head to every member of the Smith set: ${names(cands, dropped)}.`
-    : ' Every candidate is in the Smith set.');
-  const fp = r.smith.map(c => `${esc(cands[c])} ${r.counts[c]}`).join(', ');
-  out.push(` First preferences: ${fp}${r.exhausted ? ` (${r.exhausted} ballots exhausted)` : ''}.`);
-  out.push(` Eliminated for fewest first preferences${r.tiebreak ? ` (tie broken by ${r.tiebreak})` : ''}: ${esc(cands[r.eliminated])}.</p>`);
-  return out.join('');
+function placeTable(cands, place) {
+  const rounds = place.rounds;
+  const notes = [];
+  const cell = (c, r, i) => {
+    if (!r.alive.includes(c)) return '<td></td>';
+    if (!r.smith.includes(c)) return '<td class="out">outside Smith set</td>';
+    if (r.winner !== undefined) return '<td class="win">wins</td>';
+    if (c === r.eliminated) {
+      if (r.tiebreak) notes.push(`Round ${i + 1}: tie broken by ${r.tiebreak}.`);
+      return `<td class="out">${r.counts[c]}, eliminated${r.tiebreak ? '*' : ''}</td>`;
+    }
+    return `<td>${r.counts[c]}</td>`;
+  };
+  const rows = rounds[0].alive.map(c =>
+    `<tr><th>${esc(cands[c])}</th>${rounds.map((r, i) => cell(c, r, i)).join('')}</tr>`);
+  if (rounds.some(r => r.exhausted))
+    rows.push(`<tr><td class="muted">Exhausted ballots</td>${rounds.map(r => `<td class="muted">${r.exhausted ?? ''}</td>`).join('')}</tr>`);
+  return `<div style="overflow-x:auto"><table>
+    <tr><th></th>${rounds.map((_, i) => `<th>Round ${i + 1}</th>`).join('')}</tr>
+    ${rows.join('')}
+  </table></div>${notes.map(n => `<p class="muted">* ${esc(n)}</p>`).join('')}`;
 }
 
 async function renderResults(id) {
@@ -186,8 +191,8 @@ async function renderResults(id) {
     <ol>${places.map(p => `<li>${esc(cands[p.winner])}</li>`).join('')}</ol>
 
     <h2>How the result was computed</h2>
-    <p>Method: Tideman Alternative. Repeatedly restrict to the Smith set (the smallest group of candidates who each beat every candidate outside the group head-to-head), then eliminate the remaining candidate with the fewest first preferences, until one candidate remains. Lower places are found by removing the winner and repeating.</p>
-    ${places.map((p, i) => `<details ${i === 0 ? 'open' : ''}><summary>Place ${i + 1}: ${esc(cands[p.winner])}</summary>${p.rounds.map(r => describeRound(cands, r)).join('')}</details>`).join('')}
+    <p>Tideman Alternative. In each round, candidates outside the Smith set are removed. The Smith set is the smallest group whose members each beat every candidate outside it head-to-head. If one candidate remains, they win. Otherwise the candidate with the fewest first preferences among the remaining candidates is eliminated and a new round begins. Numbers below are first preferences among the candidates still in the round. Lower places are found by removing the winner and repeating.</p>
+    ${places.map((p, i) => `<details ${i === 0 ? 'open' : ''}><summary>Place ${i + 1}: ${esc(cands[p.winner])}</summary>${placeTable(cands, p)}</details>`).join('')}
 
     <h2>Head-to-head</h2>
     <p class="muted">Each cell is the number of voters who ranked the row candidate above the column candidate. Shaded cells are wins.</p>
