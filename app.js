@@ -160,7 +160,7 @@ function placeTable(cands, place) {
     `<tr><th>${esc(cands[c])}</th>${rounds.map((r, i) => cell(c, r, i)).join('')}</tr>`);
   if (rounds.some(r => r.exhausted))
     rows.push(`<tr><td class="muted">Exhausted ballots</td>${rounds.map(r => `<td class="muted">${r.exhausted ?? ''}</td>`).join('')}</tr>`);
-  return `<div style="overflow-x:auto"><table>
+  return `<div class="wide"><table>
     <tr><th></th>${rounds.map((_, i) => `<th>Round ${i + 1}</th>`).join('')}</tr>
     ${rows.join('')}
   </table></div>${notes.map(n => `<p class="muted">* ${esc(n)}</p>`).join('')}`;
@@ -196,14 +196,14 @@ async function renderResults(id) {
 
     <h2>Head-to-head</h2>
     <p class="muted">Each cell is the number of voters who ranked the row candidate above the column candidate. Shaded cells are wins.</p>
-    <div style="overflow-x:auto"><table>
+    <div class="wide"><table>
       <tr><th></th>${cands.map(c => `<th class="rot">${esc(c)}</th>`).join('')}</tr>
       ${cands.map((c, a) => `<tr><th>${esc(c)}</th>${cands.map((_, b) =>
         a === b ? '<td></td>' : `<td class="${pairwise[a][b] > pairwise[b][a] ? 'win' : ''}">${pairwise[a][b]}</td>`).join('')}</tr>`).join('')}
     </table></div>
 
     <h2>Ballots</h2>
-    <div style="overflow-x:auto"><table>
+    <div class="wide"><table>
       <tr><th>Voter</th><th>Time</th><th>Ranking</th></tr>
       ${votes.map((v, i) => `<tr><td>${esc(v.name)}</td><td>${esc(new Date(v.t).toLocaleString())}</td><td>${ballots[i].map((c, j) => `${j + 1}. ${esc(cands[c])}`).join('<br>')}</td></tr>`).join('')}
     </table></div>`;
