@@ -1,5 +1,5 @@
 // Set this to your Firebase Realtime Database URL (see README).
-const DB_URL = 'https://YOUR-PROJECT-default-rtdb.firebaseio.com';
+const DB_URL = 'https://tideman-34cbc-default-rtdb.firebaseio.com';
 
 const app = document.getElementById('app');
 
